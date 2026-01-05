@@ -6,7 +6,9 @@
 const state = {
     currentCode: '',
     selectedFiles: [],
-    currentModalFile: null
+    currentModalFile: null,
+    uploadedBytes: 0,
+    totalBytes: 0
 };
 
 // DOM Elements
@@ -37,6 +39,8 @@ const elements = {
     uploadProgress: document.getElementById('upload-progress'),
     progressFill: document.getElementById('progress-fill'),
     progressText: document.getElementById('progress-text'),
+    progressPercent: document.getElementById('progress-percent'),
+    progressSize: document.getElementById('progress-size'),
     
     // Gallery
     galleryCode: document.getElementById('gallery-code'),
@@ -55,6 +59,7 @@ const elements = {
     // Modal
     imageModal: document.getElementById('image-modal'),
     modalImage: document.getElementById('modal-image'),
+    modalFilename: document.getElementById('modal-filename'),
     modalClose: document.getElementById('modal-close'),
     modalDownload: document.getElementById('modal-download'),
     modalDelete: document.getElementById('modal-delete'),
@@ -231,7 +236,7 @@ function updatePreview() {
         
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
-        removeBtn.innerHTML = '×';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
         removeBtn.onclick = (e) => {
             e.stopPropagation();
             removeFile(index);
@@ -264,6 +269,10 @@ async function uploadFiles() {
     const formData = new FormData();
     formData.append('code', state.currentCode);
     
+    // Calculate total size
+    state.totalBytes = state.selectedFiles.reduce((acc, file) => acc + file.size, 0);
+    state.uploadedBytes = 0;
+    
     state.selectedFiles.forEach((file, index) => {
         formData.append('files[]', file);
     });
@@ -272,6 +281,9 @@ async function uploadFiles() {
     elements.uploadProgress.classList.remove('hidden');
     elements.btnUpload.disabled = true;
     elements.btnClear.disabled = true;
+    elements.progressText.textContent = 'Preparing upload...';
+    elements.progressPercent.textContent = '0%';
+    elements.progressSize.textContent = `0 / ${formatFileSize(state.totalBytes)}`;
     
     try {
         const xhr = new XMLHttpRequest();
@@ -280,7 +292,9 @@ async function uploadFiles() {
             if (e.lengthComputable) {
                 const percent = Math.round((e.loaded / e.total) * 100);
                 elements.progressFill.style.width = percent + '%';
-                elements.progressText.textContent = `Uploading... ${percent}%`;
+                elements.progressPercent.textContent = percent + '%';
+                elements.progressText.textContent = percent < 100 ? 'Uploading...' : 'Processing...';
+                elements.progressSize.textContent = `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`;
             }
         });
         
@@ -396,7 +410,7 @@ function renderGallery(data) {
         
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'download-btn';
-        downloadBtn.innerHTML = '⬇️';
+        downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
         downloadBtn.title = 'Download';
         downloadBtn.onclick = (e) => {
             e.stopPropagation();
@@ -405,7 +419,7 @@ function renderGallery(data) {
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
-        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteBtn.title = 'Delete';
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
@@ -501,6 +515,7 @@ async function deleteAll() {
 function openModal(file) {
     state.currentModalFile = file;
     elements.modalImage.src = `uploads/${state.currentCode}/${file.name}`;
+    elements.modalFilename.textContent = file.original_name;
     elements.imageModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
@@ -575,7 +590,14 @@ function formatFileSize(bytes) {
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
+    
+    // Add icon based on type
+    let icon = 'fa-info-circle';
+    if (type === 'success') icon = 'fa-check-circle';
+    else if (type === 'error') icon = 'fa-exclamation-circle';
+    else if (type === 'warning') icon = 'fa-exclamation-triangle';
+    
+    toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
     
     elements.toastContainer.appendChild(toast);
     
