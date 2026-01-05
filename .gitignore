@@ -1,0 +1,4 @@
+# Ignore uploads and data
+/uploads/*
+!/uploads/.gitkeep
+/data/transfers.json
