@@ -99,7 +99,15 @@ function bindEvents() {
     });
     
     // Upload area
-    elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+    elements.uploadArea.addEventListener('click', (e) => {
+        // Only trigger if clicking on the area itself, not on the label/button
+        if (e.target === elements.uploadArea || 
+            e.target.closest('.upload-icon') || 
+            e.target.tagName === 'H3' ||
+            e.target.tagName === 'P') {
+            elements.fileInput.click();
+        }
+    });
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.uploadArea.addEventListener('dragover', handleDragOver);
     elements.uploadArea.addEventListener('dragleave', handleDragLeave);
