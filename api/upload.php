@@ -67,12 +67,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
         
-        // Validate file type
-        $mimeType = mime_content_type($tmpName);
-        if (!isAllowedImageType($mimeType)) {
+        // Validate file type using multiple methods
+        if (!isValidImage($tmpName)) {
             $errors[] = "$name is not a valid image";
             continue;
         }
+        $mimeType = getMimeType($tmpName);
         
         // Generate safe filename
         $safeFilename = sanitizeFilename($name);

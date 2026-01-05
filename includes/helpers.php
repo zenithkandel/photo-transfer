@@ -208,6 +208,37 @@ function sanitizeFilename($filename) {
 }
 
 /**
+ * Get MIME type of a file with fallback methods
+ * @param string $filePath
+ * @return string
+ */
+function getMimeType($filePath) {
+    // Try fileinfo extension first
+    if (function_exists('mime_content_type')) {
+        return mime_content_type($filePath);
+    }
+    
+    // Try finfo class
+    if (class_exists('finfo')) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        return $finfo->file($filePath);
+    }
+    
+    // Fallback: detect by file extension
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'bmp' => 'image/bmp'
+    ];
+    
+    return $mimeTypes[$ext] ?? 'application/octet-stream';
+}
+
+/**
  * Check if file is an allowed image type
  * @param string $mimeType
  * @return bool
@@ -221,6 +252,30 @@ function isAllowedImageType($mimeType) {
         'image/bmp'
     ];
     return in_array($mimeType, $allowed);
+}
+
+/**
+ * Validate image by checking file header bytes
+ * @param string $filePath
+ * @return bool
+ */
+function isValidImage($filePath) {
+    // Check using getimagesize (most reliable)
+    $imageInfo = @getimagesize($filePath);
+    if ($imageInfo === false) {
+        return false;
+    }
+    
+    // Valid image types
+    $validTypes = [
+        IMAGETYPE_JPEG,
+        IMAGETYPE_PNG,
+        IMAGETYPE_GIF,
+        IMAGETYPE_WEBP,
+        IMAGETYPE_BMP
+    ];
+    
+    return in_array($imageInfo[2], $validTypes);
 }
 
 /**

@@ -95,8 +95,8 @@ if (isset($_GET['file'])) {
         die('File not found on server');
     }
     
-    // Get MIME type
-    $mimeType = mime_content_type($filePath);
+    // Get MIME type using helper function
+    $mimeType = getMimeType($filePath);
     
     // Send file
     header('Content-Type: ' . $mimeType);
