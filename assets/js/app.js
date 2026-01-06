@@ -2,6 +2,37 @@
  * File Transfer - Main Application JavaScript
  */
 
+// Theme handling
+const ThemeManager = {
+    init() {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => this.toggle());
+        }
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+    },
+    
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    },
+    
+    isDark() {
+        return document.documentElement.getAttribute('data-theme') === 'dark';
+    }
+};
+
+// Initialize theme manager immediately
+ThemeManager.init();
+
 // File type configurations
 const FILE_CONFIG = {
     // Icons mapping by extension

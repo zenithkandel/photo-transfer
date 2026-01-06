@@ -1,88 +1,22 @@
 {
-    "ZENITH": {
-        "created_at": "2026-01-06 02:41:05",
-        "files": [
-            {
-                "name": "1_1767663665_c4836388.docx",
-                "original_name": "1.docx",
-                "size": 14515,
-                "type": "application\/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "category": "document",
-                "icon": "fa-file-word",
-                "uploaded_at": "2026-01-06 02:41:05"
-            },
-            {
-                "name": "a_1767663665_6a23e5cc.docx",
-                "original_name": "a.docx",
-                "size": 21793,
-                "type": "application\/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "category": "document",
-                "icon": "fa-file-word",
-                "uploaded_at": "2026-01-06 02:41:05"
-            },
-            {
-                "name": "Bug_Report_1767663665_8aa03e6e.docx",
-                "original_name": "Bug Report.docx",
-                "size": 112412,
-                "type": "application\/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "category": "document",
-                "icon": "fa-file-word",
-                "uploaded_at": "2026-01-06 02:41:05"
-            },
-            {
-                "name": "burthdayy_1767663665_267f9b26.txt",
-                "original_name": "burthdayy.txt",
-                "size": 230,
-                "type": "text\/plain",
-                "category": "document",
-                "icon": "fa-file-lines",
-                "uploaded_at": "2026-01-06 02:41:05"
-            },
-            {
-                "name": "2025-10-18-03-17-52-new-world-1_1767663690_94cee0fa.zip",
-                "original_name": "2025-10-18-03-17-52-new-world-1.zip",
-                "size": 1052771,
-                "type": "application\/zip",
-                "category": "archive",
-                "icon": "fa-file-zipper",
-                "uploaded_at": "2026-01-06 02:41:30"
-            },
-            {
-                "name": "1455056618737013_1767663715_b5cf531f.pdf",
-                "original_name": "1455056618737013.pdf",
-                "size": 1902578,
-                "type": "application\/pdf",
-                "category": "document",
-                "icon": "fa-file-pdf",
-                "uploaded_at": "2026-01-06 02:41:55"
-            },
-            {
-                "name": "1455056535403688_1767663746_53b70406.jpg",
-                "original_name": "1455056535403688.jpg",
-                "size": 67217,
-                "type": "image\/jpeg",
-                "category": "image",
-                "icon": "fa-file-image",
-                "uploaded_at": "2026-01-06 02:42:26"
-            },
-            {
-                "name": "Baritone-Client-Mod-1_21_10_1767663767_b76b785a.zip",
-                "original_name": "Baritone-Client-Mod-1.21.10.zip",
-                "size": 15903578,
-                "type": "application\/zip",
-                "category": "archive",
-                "icon": "fa-file-zipper",
-                "uploaded_at": "2026-01-06 02:42:47"
-            },
-            {
-                "name": "phy_1767663826_462bd385.pdf",
-                "original_name": "phy.pdf",
-                "size": 2028954,
-                "type": "application\/pdf",
-                "category": "document",
-                "icon": "fa-file-pdf",
-                "uploaded_at": "2026-01-06 02:43:46"
-            }
-        ]
+    "RA47ZK": {
+        "created_at": "2026-01-06 03:04:11",
+        "files": []
+    },
+    "2X6WCV": {
+        "created_at": "2026-01-06 03:04:12",
+        "files": []
+    },
+    "6K8QMA": {
+        "created_at": "2026-01-06 03:04:13",
+        "files": []
+    },
+    "T4AF6F": {
+        "created_at": "2026-01-06 03:04:14",
+        "files": []
+    },
+    "8DJ47D": {
+        "created_at": "2026-01-06 03:04:15",
+        "files": []
     }
 }
