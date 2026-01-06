@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uploaded = 0;
     $uploadedFiles = [];
     $errors = [];
-    $maxFileSize = 50 * 1024 * 1024; // 50MB per file
+    $maxFileSize = 3 * 1024 * 1024 * 1024; // 3GB per file
     
     // Process each file
     $files = $_FILES['files'];

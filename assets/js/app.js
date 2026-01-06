@@ -89,7 +89,7 @@ const FILE_CONFIG = {
         'psd', 'ai', 'eps'
     ],
     
-    maxFileSize: 50 * 1024 * 1024 // 50MB
+    maxFileSize: 3 * 1024 * 1024 * 1024 // 3GB
 };
 
 // Helper function to get file extension
