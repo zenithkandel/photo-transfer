@@ -121,7 +121,7 @@
                 <div class="gallery-info">
                     <div class="info-item">
                         <i class="fas fa-files"></i>
-                        <span id="photo-count">0 files</span>
+                        <span id="file-count">0 files</span>
                     </div>
                     <div class="info-item">
                         <i class="fas fa-database"></i>

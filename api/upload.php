@@ -10,6 +10,7 @@ require_once __DIR__ . '/../includes/helpers.php';
 if (isset($_GET['action']) && $_GET['action'] === 'generate') {
     $code = generateCode();
     createTransfer($code);
+    logAction('CODE_GENERATED', ['code' => $code]);
     jsonResponse(true, 'Code generated', ['code' => $code]);
 }
 
@@ -19,10 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $code = isset($_POST['code']) ? normalizeCode($_POST['code']) : '';
     
     if (!$code) {
+        logAction('UPLOAD_FAILED', ['error' => 'No code provided']);
         jsonResponse(false, 'Transfer code is required');
     }
     
     if (!isValidCode($code)) {
+        logAction('UPLOAD_FAILED', ['code' => $code, 'error' => 'Invalid code format']);
         jsonResponse(false, 'Invalid transfer code format');
     }
     
@@ -31,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Check if files were uploaded
     if (!isset($_FILES['files']) || empty($_FILES['files']['name'][0])) {
+        logAction('UPLOAD_FAILED', ['code' => $code, 'error' => 'No files']);
         jsonResponse(false, 'No files uploaded');
     }
     
@@ -42,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $uploaded = 0;
+    $uploadedFiles = [];
     $errors = [];
     $maxFileSize = 50 * 1024 * 1024; // 50MB per file
     
@@ -80,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $validation = validateFile($tmpName, $name);
         if (!$validation['valid']) {
             $errors[] = "$name: " . $validation['error'];
+            logAction('UPLOAD_BLOCKED', ['code' => $code, 'file' => $name, 'reason' => $validation['error']]);
             continue;
         }
         
@@ -107,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'uploaded_at' => date('Y-m-d H:i:s')
             ]);
             $uploaded++;
+            $uploadedFiles[] = $name;
         } else {
             $errors[] = "Failed to save $name";
         }
@@ -117,11 +124,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($errors)) {
             $message .= ". Some files had errors.";
         }
+        logAction('FILES_UPLOADED', [
+            'code' => $code,
+            'count' => $uploaded,
+            'files' => $uploadedFiles,
+            'total_size' => array_sum(array_column($_FILES['files'], 'size'))
+        ]);
         jsonResponse(true, $message, [
             'uploaded' => $uploaded,
             'errors' => $errors
         ]);
     } else {
+        logAction('UPLOAD_FAILED', ['code' => $code, 'errors' => $errors]);
         jsonResponse(false, 'No files were uploaded', ['errors' => $errors]);
     }
 }

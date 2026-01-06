@@ -38,7 +38,7 @@ if (isset($_GET['all']) && $_GET['all'] == '1') {
         die('ZIP functionality not available');
     }
     
-    $zipFile = sys_get_temp_dir() . '/photos_' . $code . '_' . time() . '.zip';
+    $zipFile = sys_get_temp_dir() . '/files_' . $code . '_' . time() . '.zip';
     $zip = new ZipArchive();
     
     if ($zip->open($zipFile, ZipArchive::CREATE) !== true) {
@@ -57,9 +57,16 @@ if (isset($_GET['all']) && $_GET['all'] == '1') {
     
     $zip->close();
     
+    // Log the download
+    logAction('DOWNLOAD_ALL', [
+        'code' => $code,
+        'file_count' => count($transfer['files']),
+        'zip_size' => filesize($zipFile)
+    ]);
+    
     // Send ZIP file
     header('Content-Type: application/zip');
-    header('Content-Disposition: attachment; filename="photos_' . $code . '.zip"');
+    header('Content-Disposition: attachment; filename="files_' . $code . '.zip"');
     header('Content-Length: ' . filesize($zipFile));
     header('Cache-Control: no-cache, must-revalidate');
     
@@ -94,6 +101,13 @@ if (isset($_GET['file'])) {
         http_response_code(404);
         die('File not found on server');
     }
+    
+    // Log the download
+    logAction('FILE_DOWNLOADED', [
+        'code' => $code,
+        'file' => $fileInfo['original_name'],
+        'size' => $fileInfo['size']
+    ]);
     
     // Get MIME type using helper function
     $mimeType = getMimeType($filePath);

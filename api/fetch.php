@@ -26,11 +26,19 @@ if (!isValidCode($code)) {
 $transfer = getTransfer($code);
 
 if ($transfer === null) {
+    logAction('FILES_FETCHED', ['code' => $code, 'found' => false]);
     jsonResponse(true, 'No transfer found', [
         'code' => $code,
         'files' => []
     ]);
 }
+
+// Log the fetch action
+logAction('FILES_FETCHED', [
+    'code' => $code,
+    'found' => true,
+    'file_count' => count($transfer['files'])
+]);
 
 // Return transfer data
 jsonResponse(true, 'Transfer found', [

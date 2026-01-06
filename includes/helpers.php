@@ -1,11 +1,77 @@
 <?php
 /**
- * Helper functions for Photo Transfer application
+ * Helper functions for File Transfer application
  */
 
 // Path constants
 define('DATA_FILE', __DIR__ . '/../data/transfers.json');
 define('UPLOADS_DIR', __DIR__ . '/../uploads/');
+define('LOG_FILE', __DIR__ . '/../data/system.log');
+
+/**
+ * Log an action to the system log file
+ * @param string $action The action being performed
+ * @param array $details Additional details to log
+ * @return bool
+ */
+function logAction($action, $details = []) {
+    $logDir = dirname(LOG_FILE);
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+    
+    $ip = getClientIP();
+    $timestamp = date('Y-m-d H:i:s');
+    $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'Unknown';
+    
+    $logEntry = [
+        'timestamp' => $timestamp,
+        'ip' => $ip,
+        'action' => $action,
+        'details' => $details,
+        'user_agent' => $userAgent
+    ];
+    
+    $logLine = '[' . $timestamp . '] [' . $ip . '] ' . $action;
+    if (!empty($details)) {
+        $logLine .= ' | ' . json_encode($details, JSON_UNESCAPED_SLASHES);
+    }
+    $logLine .= PHP_EOL;
+    
+    return file_put_contents(LOG_FILE, $logLine, FILE_APPEND | LOCK_EX) !== false;
+}
+
+/**
+ * Get client IP address
+ * @return string
+ */
+function getClientIP() {
+    $headers = [
+        'HTTP_CF_CONNECTING_IP',     // Cloudflare
+        'HTTP_X_FORWARDED_FOR',      // Proxy
+        'HTTP_X_FORWARDED',
+        'HTTP_X_CLUSTER_CLIENT_IP',
+        'HTTP_FORWARDED_FOR',
+        'HTTP_FORWARDED',
+        'REMOTE_ADDR'
+    ];
+    
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ip = $_SERVER[$header];
+            // Handle comma-separated IPs (take the first one)
+            if (strpos($ip, ',') !== false) {
+                $ip = trim(explode(',', $ip)[0]);
+            }
+            // Validate IP
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    
+    return 'Unknown';
+}
 
 /**
  * Read transfers data from JSON file

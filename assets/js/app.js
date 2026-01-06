@@ -130,7 +130,7 @@ const elements = {
     galleryEmpty: document.getElementById('gallery-empty'),
     galleryContent: document.getElementById('gallery-content'),
     galleryGrid: document.getElementById('gallery-grid'),
-    photoCount: document.getElementById('photo-count'),
+    fileCount: document.getElementById('file-count'),
     totalSize: document.getElementById('total-size'),
     btnUploadNew: document.getElementById('btn-upload-new'),
     btnDownloadAll: document.getElementById('btn-download-all'),
@@ -436,7 +436,7 @@ async function uploadFiles() {
             if (xhr.status === 200) {
                 const response = JSON.parse(xhr.responseText);
                 if (response.success) {
-                    showToast(`${response.data.uploaded} photo(s) uploaded successfully!`, 'success');
+                    showToast(`${response.data.uploaded} file(s) uploaded successfully!`, 'success');
                     clearSelectedFiles();
                     loadGallery();
                 } else {
@@ -497,7 +497,7 @@ async function loadGallery() {
     } catch (error) {
         elements.galleryLoading.classList.add('hidden');
         elements.galleryEmpty.classList.remove('hidden');
-        showToast('Failed to load photos', 'error');
+        showToast('Failed to load files', 'error');
         console.error(error);
     }
 }
@@ -506,7 +506,7 @@ function renderGallery(data) {
     const files = data.files;
     
     elements.galleryContent.classList.remove('hidden');
-    elements.photoCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+    elements.fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
     
     // Calculate total size
     const totalBytes = files.reduce((acc, file) => acc + file.size, 0);
@@ -601,7 +601,7 @@ function downloadAll() {
     showToast('Preparing download...', 'info');
     const link = document.createElement('a');
     link.href = `api/download.php?code=${state.currentCode}&all=1`;
-    link.download = `photos_${state.currentCode}.zip`;
+    link.download = `files_${state.currentCode}.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

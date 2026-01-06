@@ -34,9 +34,15 @@ if ($transfer === null) {
 
 // Delete all files (entire session)
 if (isset($input['all']) && $input['all'] === true) {
+    $fileCount = count($transfer['files']);
     if (deleteTransfer($code)) {
+        logAction('TRANSFER_DELETED', [
+            'code' => $code,
+            'files_deleted' => $fileCount
+        ]);
         jsonResponse(true, 'All files deleted successfully');
     } else {
+        logAction('DELETE_FAILED', ['code' => $code, 'type' => 'all']);
         jsonResponse(false, 'Failed to delete transfer');
     }
 }
@@ -47,9 +53,11 @@ if (isset($input['file'])) {
     
     // Check if file exists in transfer
     $fileExists = false;
+    $originalName = $filename;
     foreach ($transfer['files'] as $file) {
         if ($file['name'] === $filename) {
             $fileExists = true;
+            $originalName = $file['original_name'];
             break;
         }
     }
@@ -59,8 +67,13 @@ if (isset($input['file'])) {
     }
     
     if (removeFileFromTransfer($code, $filename)) {
+        logAction('FILE_DELETED', [
+            'code' => $code,
+            'file' => $originalName
+        ]);
         jsonResponse(true, 'File deleted successfully');
     } else {
+        logAction('DELETE_FAILED', ['code' => $code, 'file' => $filename]);
         jsonResponse(false, 'Failed to delete file');
     }
 }
