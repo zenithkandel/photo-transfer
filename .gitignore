@@ -2,3 +2,4 @@
 /uploads/*
 !/uploads/.gitkeep
 /data/transfers.json
+/data/system.log

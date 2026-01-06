@@ -18,5 +18,19 @@
     "8DJ47D": {
         "created_at": "2026-01-06 03:04:15",
         "files": []
+    },
+    "ZENITH": {
+        "created_at": "2026-01-06 03:10:26",
+        "files": [
+            {
+                "name": "2025-10-18-03-17-52-new-world-1_1767665426_a187dc0c.zip",
+                "original_name": "2025-10-18-03-17-52-new-world-1.zip",
+                "size": 1052771,
+                "type": "application\/zip",
+                "category": "archive",
+                "icon": "fa-file-zipper",
+                "uploaded_at": "2026-01-06 03:10:26"
+            }
+        ]
     }
 }

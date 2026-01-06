@@ -193,6 +193,19 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script src="assets/js/app.js"></script>
+    <script>
+        // Clear logs function
+        function clearLogs() {
+            const logFilePath = '../data/system.log'; // Path to the log file
+            fetch(`api/clear-logs.php?file=${encodeURIComponent(logFilePath)}`)
+                .then(response => response.text())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error clearing logs:', error));
+        }
+
+        // Expose clearLogs function to the console
+        window.clearLogs = clearLogs;
+    </script>
 </body>
 </html>
 
