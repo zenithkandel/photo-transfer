@@ -197,14 +197,40 @@ function deleteTransfer($code) {
  * @return string
  */
 function sanitizeFilename($filename) {
-    // Remove path info
+    // Remove path info and null bytes
     $filename = basename($filename);
-    // Replace dangerous characters
-    $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $filename);
-    // Ensure unique name with timestamp
-    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    $filename = str_replace(chr(0), '', $filename);
+    
+    // Get extension and name separately
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     $name = pathinfo($filename, PATHINFO_FILENAME);
-    return $name . '_' . time() . '_' . random_int(1000, 9999) . '.' . $ext;
+    
+    // Remove any double extensions (security)
+    $name = preg_replace('/\.(php|phtml|phar|exe|bat|cmd|sh|js)$/i', '', $name);
+    
+    // Replace dangerous/special characters with underscore
+    $name = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $name);
+    
+    // Remove consecutive underscores
+    $name = preg_replace('/_+/', '_', $name);
+    
+    // Trim underscores from start/end
+    $name = trim($name, '_');
+    
+    // Ensure name is not empty
+    if (empty($name)) {
+        $name = 'file';
+    }
+    
+    // Truncate if too long (max 50 chars for name)
+    if (strlen($name) > 50) {
+        $name = substr($name, 0, 50);
+    }
+    
+    // Add timestamp and random string for uniqueness
+    $uniqueId = time() . '_' . bin2hex(random_bytes(4));
+    
+    return $name . '_' . $uniqueId . '.' . $ext;
 }
 
 /**
@@ -213,69 +239,337 @@ function sanitizeFilename($filename) {
  * @return string
  */
 function getMimeType($filePath) {
-    // Try fileinfo extension first
-    if (function_exists('mime_content_type')) {
-        return mime_content_type($filePath);
-    }
-    
-    // Try finfo class
+    // Try finfo class first (most reliable)
     if (class_exists('finfo')) {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
-        return $finfo->file($filePath);
+        $mime = $finfo->file($filePath);
+        if ($mime) return $mime;
+    }
+    
+    // Try mime_content_type
+    if (function_exists('mime_content_type')) {
+        $mime = mime_content_type($filePath);
+        if ($mime) return $mime;
     }
     
     // Fallback: detect by file extension
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    return getMimeTypeByExtension($ext);
+}
+
+/**
+ * Get MIME type by file extension
+ * @param string $ext
+ * @return string
+ */
+function getMimeTypeByExtension($ext) {
     $mimeTypes = [
+        // Images
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
         'png' => 'image/png',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
-        'bmp' => 'image/bmp'
+        'bmp' => 'image/bmp',
+        'svg' => 'image/svg+xml',
+        'ico' => 'image/x-icon',
+        'tiff' => 'image/tiff',
+        'tif' => 'image/tiff',
+        
+        // Documents
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'odt' => 'application/vnd.oasis.opendocument.text',
+        'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+        'odp' => 'application/vnd.oasis.opendocument.presentation',
+        'txt' => 'text/plain',
+        'rtf' => 'application/rtf',
+        'csv' => 'text/csv',
+        
+        // Archives
+        'zip' => 'application/zip',
+        'rar' => 'application/vnd.rar',
+        '7z' => 'application/x-7z-compressed',
+        'tar' => 'application/x-tar',
+        'gz' => 'application/gzip',
+        
+        // Audio
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'ogg' => 'audio/ogg',
+        'flac' => 'audio/flac',
+        'aac' => 'audio/aac',
+        'm4a' => 'audio/mp4',
+        
+        // Video
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'avi' => 'video/x-msvideo',
+        'mov' => 'video/quicktime',
+        'mkv' => 'video/x-matroska',
+        'wmv' => 'video/x-ms-wmv',
+        
+        // Code
+        'html' => 'text/html',
+        'htm' => 'text/html',
+        'css' => 'text/css',
+        'js' => 'application/javascript',
+        'json' => 'application/json',
+        'xml' => 'application/xml',
+        'php' => 'application/x-php',
+        'py' => 'text/x-python',
+        'java' => 'text/x-java-source',
+        'c' => 'text/x-c',
+        'cpp' => 'text/x-c++',
+        'h' => 'text/x-c',
+        'md' => 'text/markdown',
+        
+        // Fonts
+        'ttf' => 'font/ttf',
+        'otf' => 'font/otf',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+        
+        // Other
+        'exe' => 'application/x-msdownload',
+        'apk' => 'application/vnd.android.package-archive',
+        'dmg' => 'application/x-apple-diskimage',
+        'iso' => 'application/x-iso9660-image',
+        'sql' => 'application/sql',
+        'psd' => 'image/vnd.adobe.photoshop',
+        'ai' => 'application/postscript',
+        'eps' => 'application/postscript'
     ];
     
     return $mimeTypes[$ext] ?? 'application/octet-stream';
 }
 
 /**
- * Check if file is an allowed image type
- * @param string $mimeType
- * @return bool
+ * Get list of allowed file extensions
+ * @return array
  */
-function isAllowedImageType($mimeType) {
-    $allowed = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/bmp'
+function getAllowedExtensions() {
+    return [
+        // Images
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif',
+        // Documents
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'txt', 'rtf', 'csv',
+        // Archives
+        'zip', 'rar', '7z', 'tar', 'gz',
+        // Audio
+        'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a',
+        // Video
+        'mp4', 'webm', 'avi', 'mov', 'mkv', 'wmv',
+        // Code
+        'html', 'htm', 'css', 'js', 'json', 'xml', 'md', 'sql',
+        // Fonts
+        'ttf', 'otf', 'woff', 'woff2',
+        // Design
+        'psd', 'ai', 'eps'
     ];
-    return in_array($mimeType, $allowed);
 }
 
 /**
- * Validate image by checking file header bytes
- * @param string $filePath
+ * Get blocked/dangerous file extensions
+ * @return array
+ */
+function getBlockedExtensions() {
+    return [
+        'php', 'php3', 'php4', 'php5', 'phtml', 'phar',
+        'exe', 'msi', 'bat', 'cmd', 'com', 'scr',
+        'sh', 'bash', 'zsh', 'csh',
+        'dll', 'so', 'dylib',
+        'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh',
+        'ps1', 'ps1xml', 'ps2', 'ps2xml', 'psc1', 'psc2',
+        'reg', 'inf', 'scf', 'lnk', 'hta',
+        'cpl', 'msc', 'jar', 'jnlp',
+        'htaccess', 'htpasswd'
+    ];
+}
+
+/**
+ * Check if file extension is allowed
+ * @param string $filename
  * @return bool
  */
-function isValidImage($filePath) {
-    // Check using getimagesize (most reliable)
-    $imageInfo = @getimagesize($filePath);
-    if ($imageInfo === false) {
+function isAllowedFile($filename) {
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    // Check if extension is blocked (security)
+    if (in_array($ext, getBlockedExtensions())) {
         return false;
     }
     
-    // Valid image types
-    $validTypes = [
-        IMAGETYPE_JPEG,
-        IMAGETYPE_PNG,
-        IMAGETYPE_GIF,
-        IMAGETYPE_WEBP,
-        IMAGETYPE_BMP
+    // Check if extension is in allowed list
+    return in_array($ext, getAllowedExtensions());
+}
+
+/**
+ * Validate file by checking extension and basic integrity
+ * @param string $filePath
+ * @param string $originalName
+ * @return array ['valid' => bool, 'error' => string|null]
+ */
+function validateFile($filePath, $originalName) {
+    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    
+    // Check blocked extensions
+    if (in_array($ext, getBlockedExtensions())) {
+        return ['valid' => false, 'error' => 'File type not allowed for security reasons'];
+    }
+    
+    // Check allowed extensions
+    if (!in_array($ext, getAllowedExtensions())) {
+        return ['valid' => false, 'error' => 'File type not supported'];
+    }
+    
+    // Additional validation for images
+    if (isImageExtension($ext)) {
+        $imageInfo = @getimagesize($filePath);
+        if ($imageInfo === false) {
+            return ['valid' => false, 'error' => 'Invalid or corrupted image file'];
+        }
+    }
+    
+    // Check for PHP code in file content (security)
+    $content = @file_get_contents($filePath, false, null, 0, 1024);
+    if ($content !== false && preg_match('/<\?php|<\?=/i', $content)) {
+        return ['valid' => false, 'error' => 'File contains potentially dangerous content'];
+    }
+    
+    return ['valid' => true, 'error' => null];
+}
+
+/**
+ * Check if extension is an image type
+ * @param string $ext
+ * @return bool
+ */
+function isImageExtension($ext) {
+    $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif'];
+    return in_array(strtolower($ext), $imageExts);
+}
+
+/**
+ * Check if file is an image by its MIME type
+ * @param string $mimeType
+ * @return bool
+ */
+function isImageMime($mimeType) {
+    return strpos($mimeType, 'image/') === 0;
+}
+
+/**
+ * Get file category based on extension
+ * @param string $filename
+ * @return string
+ */
+function getFileCategory($filename) {
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    $categories = [
+        'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif', 'psd', 'ai', 'eps'],
+        'document' => ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'txt', 'rtf', 'csv', 'md'],
+        'archive' => ['zip', 'rar', '7z', 'tar', 'gz'],
+        'audio' => ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'],
+        'video' => ['mp4', 'webm', 'avi', 'mov', 'mkv', 'wmv'],
+        'code' => ['html', 'htm', 'css', 'js', 'json', 'xml', 'sql'],
+        'font' => ['ttf', 'otf', 'woff', 'woff2']
     ];
     
-    return in_array($imageInfo[2], $validTypes);
+    foreach ($categories as $category => $extensions) {
+        if (in_array($ext, $extensions)) {
+            return $category;
+        }
+    }
+    
+    return 'other';
+}
+
+/**
+ * Get Font Awesome icon class for file type
+ * @param string $filename
+ * @return string
+ */
+function getFileIcon($filename) {
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    $icons = [
+        // Images
+        'jpg' => 'fa-file-image',
+        'jpeg' => 'fa-file-image',
+        'png' => 'fa-file-image',
+        'gif' => 'fa-file-image',
+        'webp' => 'fa-file-image',
+        'bmp' => 'fa-file-image',
+        'svg' => 'fa-file-image',
+        'ico' => 'fa-file-image',
+        'tiff' => 'fa-file-image',
+        'tif' => 'fa-file-image',
+        'psd' => 'fa-file-image',
+        
+        // Documents
+        'pdf' => 'fa-file-pdf',
+        'doc' => 'fa-file-word',
+        'docx' => 'fa-file-word',
+        'xls' => 'fa-file-excel',
+        'xlsx' => 'fa-file-excel',
+        'csv' => 'fa-file-excel',
+        'ppt' => 'fa-file-powerpoint',
+        'pptx' => 'fa-file-powerpoint',
+        'txt' => 'fa-file-lines',
+        'rtf' => 'fa-file-lines',
+        'md' => 'fa-file-lines',
+        
+        // Archives
+        'zip' => 'fa-file-zipper',
+        'rar' => 'fa-file-zipper',
+        '7z' => 'fa-file-zipper',
+        'tar' => 'fa-file-zipper',
+        'gz' => 'fa-file-zipper',
+        
+        // Audio
+        'mp3' => 'fa-file-audio',
+        'wav' => 'fa-file-audio',
+        'ogg' => 'fa-file-audio',
+        'flac' => 'fa-file-audio',
+        'aac' => 'fa-file-audio',
+        'm4a' => 'fa-file-audio',
+        
+        // Video
+        'mp4' => 'fa-file-video',
+        'webm' => 'fa-file-video',
+        'avi' => 'fa-file-video',
+        'mov' => 'fa-file-video',
+        'mkv' => 'fa-file-video',
+        'wmv' => 'fa-file-video',
+        
+        // Code
+        'html' => 'fa-file-code',
+        'htm' => 'fa-file-code',
+        'css' => 'fa-file-code',
+        'js' => 'fa-file-code',
+        'json' => 'fa-file-code',
+        'xml' => 'fa-file-code',
+        'sql' => 'fa-database',
+        
+        // Fonts
+        'ttf' => 'fa-font',
+        'otf' => 'fa-font',
+        'woff' => 'fa-font',
+        'woff2' => 'fa-font',
+        
+        // Design
+        'ai' => 'fa-bezier-curve',
+        'eps' => 'fa-bezier-curve'
+    ];
+    
+    return $icons[$ext] ?? 'fa-file';
 }
 
 /**

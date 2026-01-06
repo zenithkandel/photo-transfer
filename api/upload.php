@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $uploaded = 0;
     $errors = [];
-    $maxFileSize = 10 * 1024 * 1024; // 10MB
+    $maxFileSize = 50 * 1024 * 1024; // 50MB per file
     
     // Process each file
     $files = $_FILES['files'];
@@ -57,22 +57,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Check for upload errors
         if ($error !== UPLOAD_ERR_OK) {
-            $errors[] = "Error uploading $name";
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server limit',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form limit',
+                UPLOAD_ERR_PARTIAL => 'File only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Server configuration error',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file',
+                UPLOAD_ERR_EXTENSION => 'Upload blocked by extension'
+            ];
+            $errors[] = $name . ': ' . ($errorMessages[$error] ?? 'Unknown error');
             continue;
         }
         
         // Check file size
         if ($size > $maxFileSize) {
-            $errors[] = "$name exceeds 10MB limit";
+            $errors[] = "$name: Exceeds 50MB limit";
             continue;
         }
         
-        // Validate file type using multiple methods
-        if (!isValidImage($tmpName)) {
-            $errors[] = "$name is not a valid image";
+        // Validate file type and content
+        $validation = validateFile($tmpName, $name);
+        if (!$validation['valid']) {
+            $errors[] = "$name: " . $validation['error'];
             continue;
         }
+        
+        // Get MIME type
         $mimeType = getMimeType($tmpName);
+        
+        // Get file category and icon
+        $category = getFileCategory($name);
+        $icon = getFileIcon($name);
         
         // Generate safe filename
         $safeFilename = sanitizeFilename($name);
@@ -80,12 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Move uploaded file
         if (move_uploaded_file($tmpName, $destination)) {
-            // Add to transfer record
+            // Add to transfer record with extended metadata
             addFileToTransfer($code, [
                 'name' => $safeFilename,
                 'original_name' => $name,
                 'size' => $size,
                 'type' => $mimeType,
+                'category' => $category,
+                'icon' => $icon,
                 'uploaded_at' => date('Y-m-d H:i:s')
             ]);
             $uploaded++;

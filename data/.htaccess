@@ -1,0 +1,7 @@
+# Protect data directory
+Require all denied
+
+# Deny access to JSON files
+<FilesMatch "\.json$">
+    Require all denied
+</FilesMatch>

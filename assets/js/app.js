@@ -1,6 +1,88 @@
 /**
- * Photo Transfer - Main Application JavaScript
+ * File Transfer - Main Application JavaScript
  */
+
+// File type configurations
+const FILE_CONFIG = {
+    // Icons mapping by extension
+    icons: {
+        // Images
+        jpg: 'fa-file-image', jpeg: 'fa-file-image', png: 'fa-file-image',
+        gif: 'fa-file-image', webp: 'fa-file-image', bmp: 'fa-file-image',
+        svg: 'fa-file-image', ico: 'fa-file-image', tiff: 'fa-file-image',
+        tif: 'fa-file-image', psd: 'fa-file-image',
+        
+        // Documents
+        pdf: 'fa-file-pdf',
+        doc: 'fa-file-word', docx: 'fa-file-word',
+        xls: 'fa-file-excel', xlsx: 'fa-file-excel', csv: 'fa-file-excel',
+        ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
+        txt: 'fa-file-lines', rtf: 'fa-file-lines', md: 'fa-file-lines',
+        
+        // Archives
+        zip: 'fa-file-zipper', rar: 'fa-file-zipper', '7z': 'fa-file-zipper',
+        tar: 'fa-file-zipper', gz: 'fa-file-zipper',
+        
+        // Audio
+        mp3: 'fa-file-audio', wav: 'fa-file-audio', ogg: 'fa-file-audio',
+        flac: 'fa-file-audio', aac: 'fa-file-audio', m4a: 'fa-file-audio',
+        
+        // Video
+        mp4: 'fa-file-video', webm: 'fa-file-video', avi: 'fa-file-video',
+        mov: 'fa-file-video', mkv: 'fa-file-video', wmv: 'fa-file-video',
+        
+        // Code
+        html: 'fa-file-code', htm: 'fa-file-code', css: 'fa-file-code',
+        js: 'fa-file-code', json: 'fa-file-code', xml: 'fa-file-code',
+        sql: 'fa-database',
+        
+        // Fonts
+        ttf: 'fa-font', otf: 'fa-font', woff: 'fa-font', woff2: 'fa-font',
+        
+        // Design
+        ai: 'fa-bezier-curve', eps: 'fa-bezier-curve'
+    },
+    
+    // Extensions that can be previewed as images
+    imageExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'],
+    
+    // Allowed extensions
+    allowedExtensions: [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif',
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'txt', 'rtf', 'csv',
+        'zip', 'rar', '7z', 'tar', 'gz',
+        'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a',
+        'mp4', 'webm', 'avi', 'mov', 'mkv', 'wmv',
+        'html', 'htm', 'css', 'js', 'json', 'xml', 'md', 'sql',
+        'ttf', 'otf', 'woff', 'woff2',
+        'psd', 'ai', 'eps'
+    ],
+    
+    maxFileSize: 50 * 1024 * 1024 // 50MB
+};
+
+// Helper function to get file extension
+function getFileExtension(filename) {
+    return filename.split('.').pop().toLowerCase();
+}
+
+// Helper function to get icon for file
+function getFileIcon(filename) {
+    const ext = getFileExtension(filename);
+    return FILE_CONFIG.icons[ext] || 'fa-file';
+}
+
+// Helper function to check if file is an image
+function isImageFile(filename) {
+    const ext = getFileExtension(filename);
+    return FILE_CONFIG.imageExtensions.includes(ext);
+}
+
+// Helper function to check if file extension is allowed
+function isAllowedExtension(filename) {
+    const ext = getFileExtension(filename);
+    return FILE_CONFIG.allowedExtensions.includes(ext);
+}
 
 // Global State
 const state = {
@@ -63,6 +145,9 @@ const elements = {
     modalClose: document.getElementById('modal-close'),
     modalDownload: document.getElementById('modal-download'),
     modalDelete: document.getElementById('modal-delete'),
+    modalFilePreview: document.getElementById('modal-file-preview'),
+    modalFileIcon: document.getElementById('modal-file-icon'),
+    modalFileType: document.getElementById('modal-file-type'),
     
     // Navigation
     btnBack: document.getElementById('btn-back'),
@@ -213,14 +298,37 @@ function handleDrop(e) {
 }
 
 function addFiles(fileList) {
-    const imageFiles = Array.from(fileList).filter(file => file.type.startsWith('image/'));
+    const validFiles = [];
+    const errors = [];
     
-    if (imageFiles.length === 0) {
-        showToast('Please select image files only', 'warning');
+    Array.from(fileList).forEach(file => {
+        // Check file extension
+        if (!isAllowedExtension(file.name)) {
+            errors.push(`${file.name}: File type not supported`);
+            return;
+        }
+        
+        // Check file size
+        if (file.size > FILE_CONFIG.maxFileSize) {
+            errors.push(`${file.name}: Exceeds 50MB limit`);
+            return;
+        }
+        
+        validFiles.push(file);
+    });
+    
+    if (errors.length > 0) {
+        showToast(errors[0], 'warning');
+        if (errors.length > 1) {
+            console.warn('File validation errors:', errors);
+        }
+    }
+    
+    if (validFiles.length === 0 && errors.length > 0) {
         return;
     }
     
-    state.selectedFiles = [...state.selectedFiles, ...imageFiles];
+    state.selectedFiles = [...state.selectedFiles, ...validFiles];
     updatePreview();
 }
 
@@ -238,9 +346,23 @@ function updatePreview() {
         const item = document.createElement('div');
         item.className = 'preview-item';
         
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.alt = file.name;
+        // Check if file is an image that can be previewed
+        if (isImageFile(file.name) && file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+            item.appendChild(img);
+        } else {
+            // Show file icon for non-images
+            item.classList.add('file-type-preview');
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = 'file-icon-wrapper';
+            iconWrapper.innerHTML = `
+                <i class="fas ${getFileIcon(file.name)}"></i>
+                <span class="file-ext">${getFileExtension(file.name).toUpperCase()}</span>
+            `;
+            item.appendChild(iconWrapper);
+        }
         
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
@@ -250,7 +372,6 @@ function updatePreview() {
             removeFile(index);
         };
         
-        item.appendChild(img);
         item.appendChild(removeBtn);
         elements.previewGrid.appendChild(item);
     });
@@ -385,7 +506,7 @@ function renderGallery(data) {
     const files = data.files;
     
     elements.galleryContent.classList.remove('hidden');
-    elements.photoCount.textContent = `${files.length} photo${files.length !== 1 ? 's' : ''}`;
+    elements.photoCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
     
     // Calculate total size
     const totalBytes = files.reduce((acc, file) => acc + file.size, 0);
@@ -399,10 +520,27 @@ function renderGallery(data) {
         item.className = 'gallery-item';
         item.onclick = () => openModal(file);
         
-        const img = document.createElement('img');
-        img.src = `uploads/${state.currentCode}/${file.name}`;
-        img.alt = file.original_name;
-        img.loading = 'lazy';
+        const isImage = isImageFile(file.original_name || file.name);
+        
+        if (isImage) {
+            const img = document.createElement('img');
+            img.src = `uploads/${state.currentCode}/${file.name}`;
+            img.alt = file.original_name;
+            img.loading = 'lazy';
+            item.appendChild(img);
+        } else {
+            // File type preview
+            item.classList.add('file-type-item');
+            const filePreview = document.createElement('div');
+            filePreview.className = 'file-type-preview-gallery';
+            const iconClass = file.icon || getFileIcon(file.original_name || file.name);
+            const ext = getFileExtension(file.original_name || file.name);
+            filePreview.innerHTML = `
+                <i class="fas ${iconClass}"></i>
+                <span class="file-ext-badge">${ext.toUpperCase()}</span>
+            `;
+            item.appendChild(filePreview);
+        }
         
         const overlay = document.createElement('div');
         overlay.className = 'overlay';
@@ -437,7 +575,6 @@ function renderGallery(data) {
         actions.appendChild(downloadBtn);
         actions.appendChild(deleteBtn);
         
-        item.appendChild(img);
         item.appendChild(overlay);
         item.appendChild(actions);
         elements.galleryGrid.appendChild(item);
@@ -472,7 +609,7 @@ function downloadAll() {
 
 // Delete Functions
 async function deleteFile(filename) {
-    if (!confirm('Delete this photo?')) return;
+    if (!confirm('Delete this file?')) return;
     
     try {
         const response = await fetch('api/delete.php', {
@@ -484,7 +621,7 @@ async function deleteFile(filename) {
         const data = await response.json();
         
         if (data.success) {
-            showToast('Photo deleted', 'success');
+            showToast('File deleted', 'success');
             loadGallery();
         } else {
             showToast(data.message || 'Delete failed', 'error');
@@ -496,7 +633,7 @@ async function deleteFile(filename) {
 }
 
 async function deleteAll() {
-    if (!confirm('Delete ALL photos? This cannot be undone.')) return;
+    if (!confirm('Delete ALL files? This cannot be undone.')) return;
     
     try {
         const response = await fetch('api/delete.php', {
@@ -508,7 +645,7 @@ async function deleteAll() {
         const data = await response.json();
         
         if (data.success) {
-            showToast('All photos deleted', 'success');
+            showToast('All files deleted', 'success');
             goBack();
         } else {
             showToast(data.message || 'Delete failed', 'error');
@@ -522,8 +659,25 @@ async function deleteAll() {
 // Modal Functions
 function openModal(file) {
     state.currentModalFile = file;
-    elements.modalImage.src = `uploads/${state.currentCode}/${file.name}`;
     elements.modalFilename.textContent = file.original_name;
+    
+    const isImage = isImageFile(file.original_name || file.name);
+    
+    if (isImage) {
+        // Show image preview
+        elements.modalImage.src = `uploads/${state.currentCode}/${file.name}`;
+        elements.modalImage.classList.remove('hidden');
+        elements.modalFilePreview.classList.add('hidden');
+    } else {
+        // Show file icon preview
+        elements.modalImage.classList.add('hidden');
+        elements.modalFilePreview.classList.remove('hidden');
+        const iconClass = file.icon || getFileIcon(file.original_name || file.name);
+        elements.modalFileIcon.className = `fas ${iconClass}`;
+        const ext = getFileExtension(file.original_name || file.name);
+        elements.modalFileType.textContent = ext.toUpperCase() + ' File';
+    }
+    
     elements.imageModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
