@@ -115,7 +115,7 @@ The application features a clean, minimal dark interface with:
 
 ## Security Features
 
-- **File Extension Validation** - Only allowed file types can be uploaded
+- **File Extension Validation** - Only allowed file types can be uploaded 
 - **Dangerous File Blocking** - PHP, executable, and script files are blocked
 - **Content Scanning** - Files are scanned for embedded PHP code
 - **Filename Sanitization** - Filenames are sanitized to prevent directory traversal
